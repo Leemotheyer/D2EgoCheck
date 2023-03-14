@@ -42,6 +42,7 @@ async function countRaids(account) {
     var dsc = eachRaid.dsc.length;
     var gos = eachRaid.gos.length;
     var lw = eachRaid.lw.length;
+    var ron = eachRaid.ron.length + eachRaid.ronM.length;
     //put all the raid clears into an json with keys
     var raidClears = {
         "kf": kf,
@@ -50,6 +51,7 @@ async function countRaids(account) {
         "dsc": dsc,
         "gos": gos,
         "lw": lw,
+        "ron": ron,
     }
     console.log(raidClears);
     return raidClears;
@@ -190,7 +192,10 @@ async function sortRaidClears(RaidClears) {
     var lw = 2122313384;
     var lw2 = 1661734046;
     var lw3 = 2214608156;
-    var lw4 = 2214608157;  
+    var lw4 = 2214608157; 
+    
+    var ron = 2381413764 ;
+    var ronM = "not yet";
 
     //sort raidClears into arrays for each variable
     var kfClears = [];
@@ -202,6 +207,8 @@ async function sortRaidClears(RaidClears) {
     var dscClears = [];
     var gosClears = [];
     var lwClears = [];
+    var ronClears = [];
+    var ronMClears = [];
 
     for (var i = 0; i < RaidClears.length; i++) {
         if (RaidClears[i].activityDetails.referenceId == kf || RaidClears[i].activityDetails.referenceId == kf2 || RaidClears[i].activityDetails.referenceId == kf3) {
@@ -223,6 +230,12 @@ async function sortRaidClears(RaidClears) {
         } else if (RaidClears[i].activityDetails.referenceId == lw || RaidClears[i].activityDetails.referenceId == lw2 || RaidClears[i].activityDetails.referenceId == lw3 || RaidClears[i].activityDetails.referenceId == lw4) {
             lwClears.push(RaidClears[i]);
         }
+        else if (RaidClears[i].activityDetails.referenceId == ron) {
+            ronClears.push(RaidClears[i]);
+        }
+        else if (RaidClears[i].activityDetails.referenceId == ronM) {
+            ronMClears.push(RaidClears[i]);
+        }
     }
     //put arrays into one json with name of raid as key
     var eachRaid = {
@@ -234,7 +247,9 @@ async function sortRaidClears(RaidClears) {
         "vogM": vogMClears,
         "dsc": dscClears,
         "gos": gosClears,
-        "lw": lwClears
+        "lw": lwClears,
+        "ron": ronClears,
+        "ronM": ronMClears
     };
     return eachRaid;
 }
@@ -319,31 +334,42 @@ async function getMembershipType(id) {
     }
 }
 
-async function postTable() {
+async function buildTable() {
+    var raidList = ["ron", "kf", "vow", "vog", "dsc", "gos", "lw"];
     showLoading();
     fireteamInfo = await searchFireteam();
-    for (j = 0; j< fireteamInfo.length; j++)
-    {
-        var row = (j+1) * 10;
-        document.getElementById(j+1).innerHTML = fireteamInfo[j].name;
-        document.getElementById(row + 1).innerHTML = fireteamInfo[j].raids.kf;
-        document.getElementById(row + 2).innerHTML = fireteamInfo[j].raids.vow;
-        document.getElementById(row + 3).innerHTML = fireteamInfo[j].raids.vog;
-        document.getElementById(row + 4).innerHTML = fireteamInfo[j].raids.dsc;
-        document.getElementById(row + 5).innerHTML = fireteamInfo[j].raids.gos;
-        document.getElementById(row + 6).innerHTML = fireteamInfo[j].raids.lw;
+    //make a table with the raid names as headers
+    var table = document.getElementById("raidTable");
+    var row = table.insertRow(0);
+    var cell = row.insertCell(0);
+    cell.innerHTML = "EgoCheck";
+    for (i = 0; i < raidList.length; i++) {
+        var cell = row.insertCell(i + 1);
+        cell.innerHTML = raidList[i];
+    }
+    //make a row for each fireteam member
+    for (i = 0; i < fireteamInfo.length; i++) {
+        var row = table.insertRow(i + 1);
+        var cell = row.insertCell(0);
+        cell.innerHTML = fireteamInfo[i].name;
 
         //generating and adding raid.report links
-        if (fireteamInfo[j].membershipType == 1) {
+        if (fireteamInfo[i].membershipType == 1) {
             var platform = "xb";
-        } else if (fireteamInfo[j].membershipType == 2) {
+        } else if (fireteamInfo[i].membershipType == 2) {
             var platform = "ps";
-        } else if (fireteamInfo[j].membershipType == 3) {
+        } else if (fireteamInfo[i].membershipType == 3) {
             var platform = "pc";
         }
         //add attributes to the element so it is clickable and opens a link
-        document.getElementById(j+1).setAttribute("onclick", "window.open('https://raid.report/" + platform + "/" + fireteamInfo[j].accountID + "')");
-        document.getElementById(j+1).setAttribute("style", "cursor: pointer;");
+       cell.setAttribute("onclick", "window.open('https://raid.report/" + platform + "/" + fireteamInfo[i].accountID + "')");
+        cell.setAttribute("style", "cursor: pointer;");
+
+        for (j = 0; j < raidList.length; j++) {
+            var cell = row.insertCell(j + 1);
+            cell.innerHTML = fireteamInfo[i].raids[raidList[j]];
+        }
+    
     }
     showLoading();
 }
@@ -365,5 +391,5 @@ if (quickUser != "") {
 }
 async function searchMe() {
     document.getElementById("search-bar").value = quickUser;
-    postTable();
+    buildTable();
 }
